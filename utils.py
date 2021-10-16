@@ -3,8 +3,12 @@ import utils
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import ticker, cm
-import torchvision
-from torchvision.transforms import Compose, Lambda, ToTensor
+try:
+    import torchvision
+    from torchvision.transforms import Compose, Lambda, ToTensor
+    import torch
+except:
+    pass
 
 from collections import namedtuple
 import matplotlib.animation as animation
@@ -14,7 +18,6 @@ from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
 
 import sys
-import torch
 
 
 if sys.version_info[0] < 3:

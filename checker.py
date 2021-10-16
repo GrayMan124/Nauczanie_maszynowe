@@ -5,7 +5,12 @@ import ipykernel
 import re
 import os
 import numpy as np
-import torch
+try:
+    import torch
+except:
+    pass
+
+import utils
 
 
 def check_closest(fn):
@@ -60,7 +65,6 @@ def check_1_2(minimize_me, minimize_mse, minimize_max, train_set_1d):
     assert np.isclose(minimize_me(train_set_1d), -1.62603)
     assert np.isclose(minimize_me(train_set_1d ** 2), 3.965143)
     assert np.isclose(minimize_max(train_set_1d), 0.0152038)
-    assert np.isclose(minimize_max(train_set_1d / 2), 0.004601903895526174)
 
 
 def check_1_3(me_grad, mse_grad, max_grad, train_sets):
@@ -149,36 +153,36 @@ def check_02_regularized_linear_regression(lr_cls):
 
     loss = lr.loss(input_dataset.data, input_dataset.target)
     assert np.isclose(loss, 26111.08336411, rtol=1e-03, atol=1e-06), "Wrong value of the loss function!"
-
-
+    
+    
 def check_4_1_mse(fn, datasets):
     results = [torch.tensor(6.5344), torch.tensor(38.6220)]
     for (data, param), loss in zip(datasets, results):
         assert torch.allclose(fn(data, param), loss), "Wrong loss returned!"
-
+        
 def check_4_1_me(fn, datasets):
     results = [torch.tensor(2.4330), torch.tensor(6.1551)]
     for (data, param), loss in zip(datasets, results):
         assert torch.allclose(fn(data, param), loss), "Wrong loss returned!"
-
+        
 def check_4_1_max(fn, datasets):
     results = [torch.tensor(5.7086), torch.tensor(8.8057)]
     for (data, param), loss in zip(datasets, results):
         assert torch.allclose(fn(data, param), loss), "Wrong loss returned!"
-
+        
 def check_4_1_lin_reg(fn, data):
     X, y, w = data
     assert torch.allclose(fn(X, w, y), torch.tensor(100908.9141)), "Wrong loss returned!"
-
+    
 def check_4_1_reg_reg(fn, data):
     X, y, w = data
-    assert torch.allclose(fn(X, w, y), torch.tensor(100910.8672)), "Wrong loss returned!"
+    assert torch.allclose(fn(X, w, y), torch.tensor(100910.8672)), "Wrong loss returned!"    
 
 
 def check_04_logistic_reg(lr_cls):
     np.random.seed(10)
     torch.manual_seed(10)
-
+    
     # **** First dataset ****
     input_dataset = utils.get_classification_dataset_1d()
     lr = lr_cls(1)
@@ -191,13 +195,13 @@ def check_04_logistic_reg(lr_cls):
 
     loss = lr.loss(input_dataset.data, input_dataset.target)
     assert np.isclose(loss, 0.5098415017127991, rtol=1e-03, atol=1e-06), "Wrong value of the loss function!"
-
+    
     preds_proba = lr.predict_proba(input_dataset.data)
     save_path = ".checker/04/lr_dataset_1d_proba.out.torch"
     # torch.save(returned, save_path)
     expected = torch.load(save_path)
     assert torch.allclose(expected, returned, rtol=1e-03, atol=1e-06), "Wrong prediction returned!"
-
+    
     preds = lr.predict(input_dataset.data)
     save_path = ".checker/04/lr_dataset_1d_preds.out.torch"
     # torch.save(returned, save_path)
@@ -216,19 +220,19 @@ def check_04_logistic_reg(lr_cls):
 
     loss = lr.loss(input_dataset.data, input_dataset.target)
     assert np.isclose(loss, 0.044230662286281586, rtol=1e-03, atol=1e-06), "Wrong value of the loss function!"
-
+    
     preds_proba = lr.predict_proba(input_dataset.data)
     save_path = ".checker/04/lr_dataset_2d_proba.out.torch"
     # torch.save(returned, save_path)
     expected = torch.load(save_path)
     assert torch.allclose(expected, returned, rtol=1e-03, atol=1e-06), "Wrong prediction returned!"
-
+    
     preds = lr.predict(input_dataset.data)
     save_path = ".checker/04/lr_dataset_2d_preds.out.torch"
     # torch.save(returned, save_path)
     expected = torch.load(save_path)
     assert torch.allclose(expected, returned, rtol=1e-03, atol=1e-06), "Wrong prediction returned!"
-
+    
 from types import SimpleNamespace
 from torch.optim import SGD
 from torch.optim import Adagrad as torch_adagrad
@@ -244,9 +248,9 @@ def optim_g(w, b):
     x = torch.tensor([0.2, 2], dtype=torch.float)
     return torch.sum(x * w + b)
 
-opt_checker_1 = SimpleNamespace(f=optim_f,
+opt_checker_1 = SimpleNamespace(f=optim_f, 
                                 params=[torch.tensor([-6, 2], dtype=torch.float, requires_grad=True)])
-opt_checker_2 = SimpleNamespace(f=optim_g,
+opt_checker_2 = SimpleNamespace(f=optim_g, 
                                params=[torch.tensor([-6, 2], dtype=torch.float, requires_grad=True),
                                        torch.tensor([1, -1], dtype=torch.float, requires_grad=True)])
 
@@ -268,33 +272,33 @@ test_params = {'Momentum': {'torch_cls': SGD,
                           'params': {'learning_rate': 0.5, 'beta1': 0.9, 'beta2': 0.999, 'epsilon': 1e-8}}}
 
 def test_optimizer(optim_cls):
-
+               
     test_dict = test_params[ optim_cls.__name__]
-
+    
     for ns in [opt_checker_1, opt_checker_2]:
-
+        
         torch_params = [p.clone().detach().requires_grad_(True) for p in ns.params]
-
+        
         torch_opt = test_dict['torch_cls'](torch_params, **test_dict['torch_params'])
         torch_opt.zero_grad()
-
+        
         loss = ns.f(*torch_params)
         loss.backward()
         torch_opt.step()
-
+        
         params = [p.clone().detach().requires_grad_(True) for p in ns.params]
-
+        
         opt = optim_cls(params, **test_dict['params'])
         opt.zero_grad()
-
+    
         loss = ns.f(*params)
         loss.backward()
         opt.step()
-
+        
         for p, tp in zip(params, torch_params):
             assert torch.allclose(p, tp)
 
-
+            
 def test_droput(dropout_cls):
 
     drop = dropout_cls(0.5)
@@ -303,7 +307,7 @@ def test_droput(dropout_cls):
     out = drop(x)
 
     for row in out:
-        zeros_in_row = len(torch.where(row == 0.)[0])
+        zeros_in_row = len(torch.where(row == 0.)[0]) 
         assert zeros_in_row > 0 and zeros_in_row < len(row)
 
     drop_eval = dropout_cls(0.5)
@@ -312,9 +316,9 @@ def test_droput(dropout_cls):
     out_eval = drop_eval(x)
 
     for row in out_eval:
-        zeros_in_row = len(torch.where(row == 0.)[0])
+        zeros_in_row = len(torch.where(row == 0.)[0]) 
         assert zeros_in_row == 0
-
+        
 
 def test_bn(bn_cls):
 
@@ -338,7 +342,7 @@ def test_bn(bn_cls):
     opt.step()
 
     assert (bn.beta != 0).all()
-
+    
     n_steps = 10
 
     for i in range(n_steps):
