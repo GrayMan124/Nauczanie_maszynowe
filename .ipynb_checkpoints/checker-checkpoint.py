@@ -5,7 +5,12 @@ import ipykernel
 import re
 import os
 import numpy as np
-import torch
+try:
+    import torch
+except:
+    pass
+
+import utils
 
 
 def check_closest(fn):
@@ -60,7 +65,6 @@ def check_1_2(minimize_me, minimize_mse, minimize_max, train_set_1d):
     assert np.isclose(minimize_me(train_set_1d), -1.62603)
     assert np.isclose(minimize_me(train_set_1d ** 2), 3.965143)
     assert np.isclose(minimize_max(train_set_1d), 0.0152038)
-    assert np.isclose(minimize_max(train_set_1d / 2), 0.004601903895526174)
 
 
 def check_1_3(me_grad, mse_grad, max_grad, train_sets):
