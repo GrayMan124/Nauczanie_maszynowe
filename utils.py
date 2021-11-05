@@ -390,8 +390,7 @@ def visualize_optimizer(optim, n_steps, title=None, **params):
 
     optimizer = optim([w], **params)
 
-
-    history = [w.detach().numpy()]
+    history = [w.clone().detach().numpy()]
 
     for i in range(n_steps):
 
