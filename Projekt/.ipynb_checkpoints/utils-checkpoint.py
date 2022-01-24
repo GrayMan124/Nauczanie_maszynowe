@@ -16,6 +16,16 @@ def correct(output,target,std_ret,mean_ret):
             correct+=1
     return correct
 
+def hit_profit(output,target,std_ret,mean_ret):
+    o=output.flatten()*std_ret +mean_ret
+    t=target*std_ret + mean_ret
+    tmp=o*t
+    hit_profit=0
+    for i in range(len(tmp)):
+        if(tmp[i].item() > 0):
+            hit_profit+=torch.abs(target[i])
+    return hit_profit
+
 class Lang:
     def __init__(self, name):
         self.name = name
@@ -129,9 +139,7 @@ class TextAndNumeric(nn.Module):
         
         #numeric
         lstm_output, h = self.rnn_numeric(numeric)
-        print(lstm_output.shape)
         flatten_output=torch.flatten(lstm_output,start_dim=1)
-        print(flatten_output.shape)
         numeric_output=self.numeric_fc(flatten_output)
         
         #concatenate text and numeric
@@ -139,3 +147,38 @@ class TextAndNumeric(nn.Module):
         output=self.fully_connected(hidden)
         
         return output
+    
+    
+def test_tan(model,loader):
+    loss_fn=torch.nn.MSELoss()
+
+    tan.eval()
+    with torch.no_grad():
+        val_loss_buffer=[]
+        val_ac=0
+        cor=0
+        hit_profit=0
+        for i, (x,y) in enumerate(loader):
+            headline,numeric = x
+            numeric=numeric.float()
+            headline=headline.cuda()
+            numeric=numeric.cuda()
+            y=y.cuda()
+            
+            output=model(headline,numeric)
+            output.float()
+            y.float()
+            val_loss_buffer.append(loss_fn(output,y).item())
+            if(correct(output, y, std_ret, mean_ret)==1):
+                hit_profit += correct(output, y, std_ret, mean_ret) * abs(y*std_ret - mean_ret)
+            else:
+                hit_profit-= abs(y*std_ret - mean_ret)
+            
+            cor+=correct(output,y,std_ret,mean_ret)
+            
+        val_acc=cor/len(loader)
+        val_loss=torch.mean(torch.tensor(val_loss_buffer))
+        print(f"Test loss: {val_loss:.3f} Test Acc {val_acc:.5f}")
+        print(f"Test Hit Profit: {hit_profit.item():0.3f}")
+        
+        return val_loss,val_acc,hit_profit
