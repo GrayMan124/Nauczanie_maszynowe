@@ -182,3 +182,68 @@ def test_tan(model,loader):
         print(f"Test Hit Profit: {hit_profit.item():0.3f}")
         
         return val_loss,val_acc,hit_profit
+    
+def test_numeric(model,loader):
+    loss_fn=torch.nn.MSELoss()
+
+    model.eval()
+    with torch.no_grad():
+        val_loss_buffer=[]
+        val_ac=0
+        cor=0
+        hit_profit=0
+        for i, (x,y) in enumerate(loader):
+            headline,numeric = x
+            numeric=numeric.float()
+            numeric=numeric.cuda()
+            y=y.cuda()
+            
+            output=model(numeric)
+            output.float()
+            y.float()
+            val_loss_buffer.append(loss_fn(output,y).item())
+            if(correct(output, y, std_ret, mean_ret)==1):
+                hit_profit += correct(output, y, std_ret, mean_ret) * abs(y*std_ret - mean_ret)
+            else:
+                hit_profit-= abs(y*std_ret - mean_ret)
+            
+            cor+=correct(output,y,std_ret,mean_ret)
+            
+        val_acc=cor/len(loader)
+        val_loss=torch.mean(torch.tensor(val_loss_buffer))
+        print(f"Test loss: {val_loss:.3f} Test Acc {val_acc:.5f}")
+        print(f"Test Hit Profit: {hit_profit.item():0.3f}")
+        
+        return val_loss,val_acc,hit_profit
+    
+def test_text(model,loader):
+    loss_fn=torch.nn.MSELoss()
+
+    model.eval()
+    with torch.no_grad():
+        val_loss_buffer=[]
+        val_ac=0
+        cor=0
+        hit_profit=0
+        for i, (x,y) in enumerate(loader):
+            headline,numeric = x
+            headline=headline.cuda()
+            y=y.cuda()
+            
+            output=model(headline)
+            output.float()
+            y.float()
+            val_loss_buffer.append(loss_fn(output,y).item())
+            if(correct(output, y, std_ret, mean_ret)==1):
+                hit_profit += correct(output, y, std_ret, mean_ret) * abs(y*std_ret - mean_ret)
+            else:
+                hit_profit-= abs(y*std_ret - mean_ret)
+            
+            cor+=correct(output,y,std_ret,mean_ret)
+            
+        val_acc=cor/len(loader)
+        val_loss=torch.mean(torch.tensor(val_loss_buffer))
+        print(f"Test loss: {val_loss:.3f} Test Acc {val_acc:.5f}")
+        print(f"Test Hit Profit: {hit_profit.item():0.3f}")
+        
+        return val_loss,val_acc,hit_profit
